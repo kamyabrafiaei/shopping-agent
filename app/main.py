@@ -6,6 +6,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from .routers import router as api_router
 from .security import limit_body_size
+from .auth import basic_auth_guard
+from .retrieval import BaseRetrieval
+from .logging_sqlite import log_chat
 
 
 REQUEST_COUNTER = Counter("http_requests_total", "Total HTTP requests", ["path", "method", "status"])
@@ -34,6 +37,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(MetricsMiddleware)
     app.middleware("http")(limit_body_size)
+    app.middleware("http")(basic_auth_guard)
 
     app.add_middleware(
         CORSMiddleware,
@@ -52,6 +56,12 @@ def create_app() -> FastAPI:
         return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     app.include_router(api_router)
+
+    # attach retrieval and logger to app state
+    @app.on_event("startup")
+    async def _startup():
+        app.state.retrieval = BaseRetrieval()
+        app.state.log_chat = log_chat
     return app
 
 
