@@ -20,7 +20,8 @@ def _ensure_db():
             created_at REAL,
             chat_id TEXT,
             request_json TEXT,
-            response_json TEXT
+            response_json TEXT,
+            meta TEXT
         )
         """
     )
@@ -31,7 +32,7 @@ def _ensure_db():
 _CONN = None
 
 
-def log_chat(chat_id: str, req: Any, resp: Any):
+def log_chat(chat_id: str, req: Any, resp: Any, meta: dict | None = None):
     global _CONN
     if not ENABLE_SQLITE_LOGS:
         return
@@ -41,12 +42,13 @@ def log_chat(chat_id: str, req: Any, resp: Any):
         return
     cur = _CONN.cursor()
     cur.execute(
-        "INSERT INTO chat_logs (created_at, chat_id, request_json, response_json) VALUES (?, ?, ?, ?)",
+        "INSERT INTO chat_logs (created_at, chat_id, request_json, response_json, meta) VALUES (?, ?, ?, ?, ?)",
         (
             time.time(),
             chat_id,
             json.dumps(req, ensure_ascii=False),
             json.dumps(resp, ensure_ascii=False),
+            json.dumps(meta or {}, ensure_ascii=False),
         ),
     )
     _CONN.commit()

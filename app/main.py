@@ -9,6 +9,7 @@ from .security import limit_body_size
 from .auth import basic_auth_guard
 from .retrieval import BaseRetrieval
 from .logging_sqlite import log_chat
+from .config import BASIC_AUTH_ENABLE
 
 
 REQUEST_COUNTER = Counter("http_requests_total", "Total HTTP requests", ["path", "method", "status"])
@@ -37,7 +38,8 @@ def create_app() -> FastAPI:
 
     app.add_middleware(MetricsMiddleware)
     app.middleware("http")(limit_body_size)
-    app.middleware("http")(basic_auth_guard)
+    if BASIC_AUTH_ENABLE:
+        app.middleware("http")(basic_auth_guard)
 
     app.add_middleware(
         CORSMiddleware,
