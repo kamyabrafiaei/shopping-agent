@@ -13,20 +13,41 @@ async def chat_endpoint(payload: ChatRequest, request: Request) -> ChatResponse:
         text = last.content.strip()
 
         if text == "ping" or text.lower().strip() == "ping":
-            return ChatResponse(message="pong", base_random_keys=None, member_random_keys=None)
+            resp = ChatResponse(message="pong", base_random_keys=None, member_random_keys=None)
+            request.app.state.log_chat(
+                payload.chat_id,
+                payload.model_dump(),
+                resp.model_dump(),
+                meta={"scenario":"0","rule":"ping"},
+            )
+            return resp
 
         lt = text.lower()
         if lt.startswith("return base random key:") or lt.startswith("return base_random_key:"):
             value = text.split(":", 1)[1].strip()
             if not value:
                 raise HTTPException(status_code=400, detail="empty base key")
-            return ChatResponse(message=None, base_random_keys=[value], member_random_keys=None)
+            resp = ChatResponse(message=None, base_random_keys=[value], member_random_keys=None)
+            request.app.state.log_chat(
+                payload.chat_id,
+                payload.model_dump(),
+                resp.model_dump(),
+                meta={"scenario":"0","rule":"return_base_key"},
+            )
+            return resp
 
         if lt.startswith("return member random key:") or lt.startswith("return member_random_key:"):
             value = text.split(":", 1)[1].strip()
             if not value:
                 raise HTTPException(status_code=400, detail="empty member key")
-            return ChatResponse(message=None, base_random_keys=None, member_random_keys=[value])
+            resp = ChatResponse(message=None, base_random_keys=None, member_random_keys=[value])
+            request.app.state.log_chat(
+                payload.chat_id,
+                payload.model_dump(),
+                resp.model_dump(),
+                meta={"scenario":"0","rule":"return_member_key"},
+            )
+            return resp
 
         # Stage 1: map query to a single base_random_key using retrieval
         rk = request.app.state.retrieval.search_one(text)

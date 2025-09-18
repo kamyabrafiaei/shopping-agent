@@ -43,7 +43,7 @@ docs/
 artifacts/
 *.parquet
 *.ipynb
-
+duckdb*/
 # ---- Docker ----
 .dockerignore
 
